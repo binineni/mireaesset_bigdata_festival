@@ -37,7 +37,7 @@ st.text('')
 # 화면이 업데이트될 때 마다 변수 할당이 된다면 시간이 오래 걸려서 @st.cache_data 사용(캐싱)
 @st.cache_data
 def load_streamlit_data():
-    df = pd.read_csv('data/data_streamlit_df.csv')
+    df = pd.read_csv('streamlit_mockup/data/data_streamlit_df.csv')
     df['시초/공모(%)'] = df['시초/공모(%)'].str.rstrip('%')
     df['시초/공모(%)'] = pd.to_numeric(df['시초/공모(%)'])
     df['예측일'] = pd.to_datetime(df['예측일']).dt.date
