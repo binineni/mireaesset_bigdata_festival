@@ -487,8 +487,8 @@ if choose == "진행 예정 청약":
 
             #내용 펼치기 radio
             # 체크 박스 위젯에 고유한 키 부여
-            pros_box = st.checkbox('강점 펼치기', key=f'pros_box_2{i}', help='투자설명서의 요약정보내 인수인의 의견의 내용을 분석')
-            nega_box = st.checkbox('약점 펼치기', key=f'nega_box_2{i}', help='투자설명서의 요약정보내 투자위험요소의 내용을 분석')
+            pros_box = st.checkbox('강점 보기', key=f'pros_box_2{i}', help='투자설명서의 요약정보내 인수인의 의견의 내용을 분석')
+            nega_box = st.checkbox('리스크 보기', key=f'nega_box_2{i}', help='투자설명서의 요약정보내 투자위험요소의 내용을 분석')
 
             # 장점 제목(홀수 인덱스 : 19, 21, 23)
             st.markdown('<span style="color: #F58220;font-size: 25px;">강점 분석</span>', unsafe_allow_html=True)
@@ -519,7 +519,7 @@ if choose == "진행 예정 청약":
             st.divider()
 
             # 단점 제목(짝수 인덱스 : 20, 22, 24)
-            st.markdown('<span style="color: #F58220;font-size: 25px;">약점 분석</span>', unsafe_allow_html=True)
+            st.markdown('<span style="color: #F58220;font-size: 25px;">리스크 분석</span>', unsafe_allow_html=True)
 
             if nega_box:
                 # 본문 인덱스 : 2, 4, 6/ 8, 10, 12 / 14, 16, 18
