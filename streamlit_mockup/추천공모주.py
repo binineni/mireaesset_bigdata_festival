@@ -15,7 +15,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics.pairwise import euclidean_distances
 
 import seaborn as sns
-
+import time
 from streamlit_option_menu import option_menu
 
 #########################################중요###########################################
@@ -27,9 +27,27 @@ from streamlit_option_menu import option_menu
 #layout = wide : 화면 설정 디폴트값을 와이드로
 st.set_page_config(page_title="추천공모주")
 
+#메뉴 탭 하단 사이드바에 이미지 넣기
+with st.sidebar:
+    choose = option_menu("메뉴", ["진행 예정 청약", "최근 상장한 기업 목록"],
+                         icons=['메뉴 아이콘1', '메뉴 아이콘2'],
+                         menu_icon="bi bi-question-circle", default_index=0,
+                         styles={
+                         # default_index = 처음에 보여줄 페이지 인덱스 번호
+        "container": {"padding": "5!important", "background-color": "#fafafa"},
+        "icon": {"color": "orange", "font-size": "25px"},
+        "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+        "nav-link-selected": {"background-color": "#02ab21"},
+    } # css 설정
+    )
 
-#최상단에 이미지 넣기
-#st.image(image, width=120)
+image = Image.open('img/미래에셋로고.png')
+image2 = Image.open('img/네이버클라우드.png')
+image3 = Image.open('img/미래에솦.png')
+
+st.sidebar.image(image, use_column_width=True)
+st.sidebar.image(image2, use_column_width=True)
+st.sidebar.image(image3, use_column_width=True)
 
 ###########################################################################################
 #필요한 데이터셋 불러오기
@@ -41,41 +59,63 @@ def load_streamlit_data():
     df['시초/공모(%)'] = pd.to_numeric(df['시초/공모(%)'])
     df['예측일'] = pd.to_datetime(df['예측일']).dt.date
     df['신규상장일'] = pd.to_datetime(df['신규상장일']).dt.date
+    df['종목코드'] = df['종목코드'].astype(str).str.zfill(6)
     df = df.sort_values(by=['예측일', '신규상장일'], ascending=[False, False])
 
     return df
 
 df = load_streamlit_data()
+
+@st.cache_data
+def load_company_analysis_data():
+    comp_analysis = pd.read_csv('streamlit_mockup/data/data_요약서비스.csv')
+    comp_analysis['종목코드'] = comp_analysis['종목코드'].astype(str).str.zfill(6)
+
+    return comp_analysis
+
+comp_analysis = load_company_analysis_data()
 #################################################################################
 
-#F, T, A 별점 함수
-def count_star(df, score, i):
-    if df[score][i] <= df[score].quantile(q=0.3):
+
+#별점을 매기는 기준
+f_quantiles = [df["f_score"].quantile(q=0.3), df["f_score"].quantile(q=0.5),
+               df["f_score"].quantile(q=0.7), df["f_score"].quantile(q=0.9)]
+
+t_quantiles = [df["t_score"].quantile(q=0.3), df["t_score"].quantile(q=0.5),
+               df["t_score"].quantile(q=0.7), df["t_score"].quantile(q=0.9)]
+
+a_quantiles = [df["a_score"].quantile(q=0.3), df["a_score"].quantile(q=0.5),
+               df["a_score"].quantile(q=0.7), df["a_score"].quantile(q=0.9)]
+
+
+# 별점은 전체 df의 F, T, A quantile을 기준으로 함
+def count_star(score, quantiles):
+    if score <= quantiles[0]:
         star = 1
-    elif df[score][i] <= df[score].quantile(q=0.5):
+    elif score <= quantiles[1]:
         star = 2
-    elif df[score][i] <= df[score].quantile(q=0.7):
+    elif score <= quantiles[2]:
         star = 3
-    elif df[score][i] <= df[score].quantile(q=0.9):
+    elif score <= quantiles[3]:
         star = 4
     else:
         star = 5
 
     return star
 
-#메뉴 탭 하단 사이드바에 이미지 넣기
-with st.sidebar:
-    choose = option_menu("메뉴", ["진행 예정 청약", "최근 상장한 기업 목록", "메뉴 이름3... 등등"],
-                         icons=['메뉴 아이콘1', '메뉴 아이콘2', '메뉴 아이콘3'],
-                         menu_icon="bi bi-question-circle", default_index=0,
-                         styles={
-                         # default_index = 처음에 보여줄 페이지 인덱스 번호
-        "container": {"padding": "5!important", "background-color": "#fafafa"},
-        "icon": {"color": "orange", "font-size": "25px"},
-        "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
-        "nav-link-selected": {"background-color": "#02ab21"},
-    } # css 설정
-    )
+# 주간사 정보를 처리하는 함수
+def process_agency(row):
+    agencies = row.split(',')
+    if '미래에셋증권' in agencies:
+        return '미래에셋증권'
+    elif len(agencies) > 1:
+        return ', '.join(agencies)  # 최대 두 개까지 표시
+    elif len(agencies) == 1:
+        return agencies[0]  # 하나만 있는 경우
+    else:
+        return None
+
+
 
 #제목
 st.title('추천공모주')
@@ -94,8 +134,8 @@ df_pred = df[(df['예측일'] <= today) & (df['신규상장일'] >= today)]
 df_pred.reset_index(drop=True,inplace=True)
 
 #df : 예측 완료되었고 실제 결과가 나온 기업
-df = df[~df.index.isin(df_pred.index)]
-df.reset_index(drop=True,inplace=True)
+df_done = df[~df.index.isin(df_pred.index)]
+df_done.reset_index(drop=True,inplace=True)
 
 # 진행 예정 청약 탭
 if choose == "진행 예정 청약":
@@ -110,7 +150,7 @@ if choose == "진행 예정 청약":
     for i in range(0, len(df_pred)):
 
         # 청약권장도 박스 색
-        color_list = ['#FF5733', '#FFD700', '#00FF00 ', '#009933']
+        color_list = ['#FF5733', '#FFD700', '#01DF01 ', '#009933']
 
         # 청약 권장도
         if df_pred['model_score'][i] < 25:
@@ -126,6 +166,9 @@ if choose == "진행 예정 청약":
             comment = '추천'
             color = color_list[3]
 
+
+        # 데이터프레임에 주간사 정보 처리 결과 적용
+        df_pred['주간사'] = df_pred['주간사'].apply(process_agency)
 
         st.markdown(
             f"""
@@ -158,9 +201,9 @@ if choose == "진행 예정 청약":
             percent = '100%~'
 
         #F, T, A의 별점 계산
-        f_star = count_star(df_pred, 'f_score', i)
-        t_star = count_star(df_pred, 't_score', i)
-        a_star = count_star(df_pred, 'a_score', i)
+        f_star = count_star(df_pred['f_score'][i], f_quantiles)
+        t_star = count_star(df_pred['t_score'][i], t_quantiles)
+        a_star = count_star(df_pred['a_score'][i], a_quantiles)
 
         # st.tab 함수를 통해 하단에 tab 메뉴 생성
         tab1, tab2, tab3, tab4 = st.tabs(['❌','추천 자세히 보기', '과거 유사종목 비교', '기업분석 요약'])
@@ -233,6 +276,7 @@ if choose == "진행 예정 청약":
 
         # 과거 유사종목 비교 탭
         with tab3:
+            st.caption('해당 기업과 F, T, A, 공모주 청약 판단 종합 점수가 가장 비슷한 기업을 확인하실 수 있습니다.')
             st.markdown('<span style="color: #043B72;font-size: 28px;">해당 점수대 수익률 </span>', unsafe_allow_html=True)
             st.markdown(
                 f"<h1 style='text-align: left;'><span style='font-size: 25px;'>종합점수 : </span> <span style='color: #043B72 ; font-size: 30px;'>{int(df_pred['model_score'][i])}점</span></h1>",
@@ -321,9 +365,7 @@ if choose == "진행 예정 청약":
                 sorted_indices = np.argsort(distances[0])
                 return sorted_indices
 
-
-            # 비교 대상 데이터프레임과 타겟 데이터 선택
-            comparison_group = selected_df[["f_score", "t_score", "a_score", "model_score"]]
+            comparison_group = df_done[["f_score", "t_score", "a_score", "model_score"]]
             target = df_pred.iloc[i, :][["f_score", "t_score", "a_score", "model_score"]].values.reshape(1, -1)
 
             # 각 학습 데이터와의 유클리드 거리 유사도 계산
@@ -334,7 +376,8 @@ if choose == "진행 예정 청약":
             selected_indices = similarities[:top_k]
 
             # 최종 선택된 가장 유사한 기업
-            selected_group = selected_df.iloc[selected_indices, :]
+            selected_group = df_done.iloc[selected_indices, :]
+            #selected_group.reset_index(drop=True, inplace=True)
 
             # 그리드 레이아웃 생성
             cols = st.columns((7, 1.5, 1.4, 3))
@@ -349,7 +392,7 @@ if choose == "진행 예정 청약":
                             <p><strong>공모가 </strong> {selected_group['공모가(원)'].iloc[0]}원</p>
                             <p><strong>상장일 </strong> {selected_group['신규상장일'].iloc[0]}</p>
                             <p><strong>종합 점수 </strong> {int(selected_group['model_score'].iloc[0])}</p>
-                            <p><strong>시가 수익률</strong> {selected_group['시초/공모(%)'].iloc[0]}%</p> 
+                            <p><strong style='font-weight: bold;'>시가 수익률 </strong><span style='color: #F58220;font-size : 22px'>{selected_group['시초/공모(%)'].iloc[0]}%</span></p> 
                         </div>
                     </div>
                     """,
@@ -367,14 +410,19 @@ if choose == "진행 예정 청약":
                 st.caption("기관")
 
             with cols[3]:
-                st.subheader('⭐' * count_star(selected_df, "f_score", selected_indices[0]))
+                # F, T, A의 별점 계산
+                f_star = count_star(selected_group.iloc[0, selected_group.columns.get_loc("f_score")], f_quantiles)
+                t_star = count_star(selected_group.iloc[0, selected_group.columns.get_loc("t_score")], t_quantiles)
+                a_star = count_star(selected_group.iloc[0, selected_group.columns.get_loc("a_score")], a_quantiles)
+
+                st.subheader('⭐' * f_star)
                 st.text('')
                 st.text('')
                 st.text('')
-                st.subheader('⭐' * count_star(selected_df, "t_score", selected_indices[0]))
+                st.subheader('⭐' * t_star)
                 st.text('')
                 st.text('')
-                st.subheader('⭐' * count_star(selected_df, "a_score", selected_indices[0]))
+                st.subheader('⭐' * a_star)
 
             #두번째 유사 기업과 구분
             st.divider()
@@ -390,7 +438,7 @@ if choose == "진행 예정 청약":
                         <p><strong>공모가 </strong> {selected_group['공모가(원)'].iloc[1]}원</p>
                         <p><strong>상장일 </strong> {selected_group['신규상장일'].iloc[1]}</p>
                         <p><strong>종합 점수 </strong> {int(selected_group['model_score'].iloc[1])}</p>
-                        <p><strong>시가 수익률</strong> {selected_group['시초/공모(%)'].iloc[1]}%</p> 
+                        <p><strong style='font-weight: bold;'>시가 수익률 </strong><span style='color: #F58220;font-size : 22px'>{selected_group['시초/공모(%)'].iloc[1]}%</span></p>
                     </div>
                 </div>
                 """,
@@ -407,14 +455,19 @@ if choose == "진행 예정 청약":
                 st.caption("기관")
 
             with cols[3]:
-                st.subheader('⭐' * count_star(selected_df, "f_score", selected_indices[1]))
+                # F, T, A의 별점 계산
+                f_star = count_star(selected_group.iloc[1, selected_group.columns.get_loc("f_score")], f_quantiles)
+                t_star = count_star(selected_group.iloc[1, selected_group.columns.get_loc("t_score")], t_quantiles)
+                a_star = count_star(selected_group.iloc[1, selected_group.columns.get_loc("a_score")], a_quantiles)
+
+                st.subheader('⭐' * f_star)
                 st.text('')
                 st.text('')
                 st.text('')
-                st.subheader('⭐' * count_star(selected_df, "t_score", selected_indices[1]))
+                st.subheader('⭐' * t_star)
                 st.text('')
                 st.text('')
-                st.subheader('⭐' * count_star(selected_df, "a_score", selected_indices[1]))
+                st.subheader('⭐' * a_star)
 
 
             st.text('')
@@ -423,15 +476,80 @@ if choose == "진행 예정 청약":
             st.text('')
 
         ############################################################################
+        # 기업 분석 요약 탭
+        with tab4:
+            st.markdown('<span style="color: #043B72;font-size: 28px;">기업분석 요약 </span>', unsafe_allow_html=True)
+            st.caption('기업별 투자설명서를 요약한 정보입니다.')
+            st.text('')
 
-        # 기업분석 탭
-        #with tab4:
-        #   st.markdown('<span style="color: #043B72;font-size: 28px;">기업 분석 </span>', unsafe_allow_html=True)
+            #df의 i번째 행과 종목코드를 비교하여 comp에서 인덱싱
+            comp_analysis_row = comp_analysis[comp_analysis['종목코드'] == df_pred['종목코드'][i]]
+
+            #내용 펼치기 radio
+            # 체크 박스 위젯에 고유한 키 부여
+            pros_box = st.checkbox('강점 펼치기', key=f'pros_box_2{i}', help='투자설명서의 요약정보내 인수인의 의견의 내용을 분석')
+            nega_box = st.checkbox('약점 펼치기', key=f'nega_box_2{i}', help='투자설명서의 요약정보내 투자위험요소의 내용을 분석')
+
+            # 장점 제목(홀수 인덱스 : 19, 21, 23)
+            st.markdown('<span style="color: #F58220;font-size: 25px;">강점 분석</span>', unsafe_allow_html=True)
+
+            if pros_box:
+                # 본문 인덱스 : 1, 3, 5/ 7, 9, 11 / 13, 15, 17
+                start = 1
+                for column in range(19, 24, 2):
+                    title = comp_analysis_row.iloc[0, column]
+                    if pd.isna(title) or title == "error":
+                        st.markdown('<span style="color: #043B72;font-size: 18px;">아직 요약 정보가 업로드되지 않았어요 😥</span>',
+                                    unsafe_allow_html=True)
+                        break
+                    else:
+                        # 제목
+                        st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
+                                    unsafe_allow_html=True)
+                        # 내용
+                        for j in range(start, start + 5, 2):
+                            content = comp_analysis_row.iloc[0, j]
+                            if pd.notna(content):
+                                st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
+                                            unsafe_allow_html=True)
+
+                        st.divider()
+                    start += 6
+
+            st.divider()
+
+            # 단점 제목(짝수 인덱스 : 20, 22, 24)
+            st.markdown('<span style="color: #F58220;font-size: 25px;">약점 분석</span>', unsafe_allow_html=True)
+
+            if nega_box:
+                # 본문 인덱스 : 2, 4, 6/ 8, 10, 12 / 14, 16, 18
+                start = 2
+                for column in range(20, 25, 2):
+                    title = comp_analysis_row.iloc[0, column]
+                    if pd.isna(title) or title == "error":
+                        st.markdown('<span style="color: #043B72;font-size: 18px;">아직 요약 정보가 업로드되지 않았어요 😥</span>',
+                                    unsafe_allow_html=True)
+                    else:
+                        # 제목
+                        st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
+                                    unsafe_allow_html=True)
+                        # 내용
+                        for j in range(start, start + 5, 2):
+                            content = comp_analysis_row.iloc[0, j]
+                            if pd.notna(content):
+                                st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
+                                            unsafe_allow_html=True)
+
+                        st.divider()
+                    start += 6
+
+            st.divider()
 
 if choose == "최근 상장한 기업 목록":
     st.text('')
 
     st.header('최근 상장한 기업 목록')
+    st.caption('AI가 예측한 점수와 실제 수익률을 비교해보세요!')
     st.divider()
     st.text('')
 
@@ -440,29 +558,29 @@ if choose == "최근 상장한 기업 목록":
     for i in range(0, 5):
 
         # 청약 권장도
-        if df['model_score'][i] < 30:
+        if df_done['model_score'][i] < 30:
             comment = '위험'
-        elif df['model_score'][i] < 50:
+        elif df_done['model_score'][i] < 50:
             comment = '중립'
-        elif df['model_score'][i] < 70:
+        elif df_done['model_score'][i] < 70:
             comment = '권장'
         else:
             comment = '추천'
 
         # 예상 수익률
-        if df['범주'][i] == 0:
+        if df_done['범주'][i] == 0:
             percent = '~20%'
-        elif df['범주'][i] == 1:
+        elif df_done['범주'][i] == 1:
             percent = '20%~60%'
-        elif df['범주'][i] == 2:
+        elif df_done['범주'][i] == 2:
             percent = '60~100%'
         else:
             percent = '100%~'
 
         # F, T, A의 별점 계산
-        f_star = count_star(df, 'f_score', i)
-        t_star = count_star(df, 't_score', i)
-        a_star = count_star(df, 'a_score', i)
+        f_star = count_star(df_done['f_score'][i], f_quantiles)
+        t_star = count_star(df_done['t_score'][i], t_quantiles)
+        a_star = count_star(df_done['a_score'][i], a_quantiles)
 
         # 그리드 레이아웃 생성
         cols = st.columns((3, 3))
@@ -472,10 +590,10 @@ if choose == "최근 상장한 기업 목록":
             st.markdown(
                 f"""
                 <div style="padding: 10px; text-align: left;">
-                    <h2>{df['기업명'].values[i]}</h2>
-                    <p><strong>공모가 </strong> {df['공모가(원)'].values[i]}원</p>
-                    <p><strong>상장일 </strong> {df['신규상장일'].values[i]}</p>
-                    <p><strong>주간사 </strong> {df['주간사'].values[i]}</p>
+                    <h2>{df_done['기업명'].values[i]}</h2>
+                    <p><strong>공모가 </strong> {df_done['공모가(원)'].values[i]}원</p>
+                    <p><strong>상장일 </strong> {df_done['신규상장일'].values[i]}</p>
+                    <p><strong>주간사 </strong> {df_done['주간사'].values[i]}</p>
                     <p><strong>청약 권장도 </strong> {comment}</p>
                 </div>
                 """,
@@ -483,7 +601,7 @@ if choose == "최근 상장한 기업 목록":
             )
             #시가 수익률
             st.markdown(
-                f"<h1 style='text-align: center;'><span style='font-size: 25px;'>시가 수익률</span> <span style='color: orange;'>{df['시초/공모(%)'][i]}%</span></h1>",
+                f"<h1 style='text-align: center;'><span style='font-size: 25px;'>시가 수익률</span> <span style='color: orange;'>{df_done['시초/공모(%)'][i]}%</span></h1>",
                 unsafe_allow_html=True)
             #예측했던 수익률
             st.markdown(
@@ -494,7 +612,7 @@ if choose == "최근 상장한 기업 목록":
         with cols[1]:
             # 점수 데이터
             total_score = 100
-            score = df['model_score'][i]
+            score = df_done['model_score'][i]
             remaining_score = total_score - score
 
             # 원 그래프 데이터
@@ -509,11 +627,77 @@ if choose == "최근 상장한 기업 목록":
             ax.axis('equal')  # 원형 파이차트로 설정
             st.pyplot(fig)
 
-            st.markdown(f"<h1 style='text-align: center;'>{int(df['model_score'][i])}점",
+            st.markdown(f"<h1 style='text-align: center;'>{int(df_done['model_score'][i])}점",
                         unsafe_allow_html=True)
             st.markdown(f"<h1 style='text-align: center; font-size: 18px;'>공모주 종합 평가 점수", unsafe_allow_html=True)
 
+        with st.expander('기업분석 요약'):
+            # df_done의 i번째 행과 종목코드를 비교하여 comp에서 인덱싱
+            comp_analysis_row = comp_analysis[comp_analysis['종목코드'] == df_done['종목코드'][i]]
+
+            # 체크 박스 위젯에 고유한 키 부여
+            pros_box = st.checkbox('강점 펼치기', key=f'pros_box_2{i}')
+            nega_box = st.checkbox('약점 펼치기', key=f'nega_box_2{i}')
+
+            # 장점 제목(홀수 인덱스 : 19, 21, 23)
+            st.markdown('<span style="color: #F58220;font-size: 25px;">강점 분석</span>', unsafe_allow_html=True)
+
+            if pros_box:
+                # 본문 인덱스 : 1, 3, 5/ 7, 9, 11 / 13, 15, 17
+                start = 1
+                for column in range(19, 24, 2):
+                    title = comp_analysis_row.iloc[0, column]
+                    if pd.isna(title) or title == "error":
+                        st.markdown('<span style="color: #043B72;font-size: 18px;">아직 요약 정보가 업로드되지 않았어요 😥</span>',
+                                    unsafe_allow_html=True)
+                        break
+                    else:
+                        # 제목
+                        st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
+                                    unsafe_allow_html=True)
+                        # 내용
+                        for j in range(start, start + 5, 2):
+                            content = comp_analysis_row.iloc[0, j]
+                            if pd.notna(content):
+                                st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
+                                            unsafe_allow_html=True)
+
+                        st.divider()
+                    start += 6
+
+            st.divider()
+
+            # 단점 제목(짝수 인덱스 : 20, 22, 24)
+            st.markdown('<span style="color: #F58220;font-size: 25px;">약점 분석</span>', unsafe_allow_html=True)
+
+            if nega_box:
+                # 본문 인덱스 : 2, 4, 6/ 8, 10, 12 / 14, 16, 18
+                start = 2
+                for column in range(20, 25, 2):
+                    title = comp_analysis_row.iloc[0, column]
+                    if pd.isna(title) or title == "error":
+                        st.markdown('<span style="color: #043B72;font-size: 18px;">아직 요약 정보가 업로드되지 않았어요 😥</span>',
+                                    unsafe_allow_html=True)
+                    else:
+                        # 제목
+                        st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
+                                    unsafe_allow_html=True)
+                        # 내용
+                        for j in range(start, start + 5, 2):
+                            content = comp_analysis_row.iloc[0, j]
+                            if pd.notna(content):
+                                st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
+                                            unsafe_allow_html=True)
+
+                        st.divider()
+                    start += 6
+
+            st.divider()
+
         st.divider()
+
+
+
 
 
 
