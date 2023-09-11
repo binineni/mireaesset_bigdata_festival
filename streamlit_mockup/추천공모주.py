@@ -281,11 +281,11 @@ if choose == "진행 예정 청약":
             st.markdown(
                 f"<h1 style='text-align: left;'><span style='font-size: 25px;'>종합점수 : </span> <span style='color: #043B72 ; font-size: 30px;'>{int(df_pred['model_score'][i])}점</span></h1>",
                 unsafe_allow_html=True)
-            st.caption('최근 5년간 기업들의 점수 분포')
+            st.caption('최근 3년간 기업들의 점수 분포')
 
             ############### 산점도 그래프 생성 #######################
-            # 데이터 프레임에서 필요한 부분만 선택 (최근 5년 : 400개)
-            selected_df = df.iloc[:400, :]
+            # 데이터 프레임에서 필요한 부분만 선택 (최근 5년 : 400개, 최근 3년 : 250개)
+            selected_df = df.iloc[:250, :]
 
             fig = px.scatter(
                 selected_df, x='model_score', y='시초/공모(%)',
