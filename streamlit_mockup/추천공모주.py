@@ -491,13 +491,10 @@ if choose == "진행 예정 청약":
             st.caption('기업별 투자설명서를 요약한 정보입니다.')
             st.text('')
 
-            st.text('comp_analysis')
-            st.header(comp_analysis['종목코드'])
-            st.text('df_pred_i')
-            st.header(df_pred['종목코드'][i])
-
             #df의 i번째 행과 종목코드를 비교하여 comp에서 인덱싱
             comp_analysis_row = comp_analysis[comp_analysis['종목코드'] == df_pred['종목코드'][i]]
+
+            st.header(comp_analysis['종목코드'][0])
 
             if comp_analysis_row.empty:
                 st.warning('아직 해당 기업의 요약 리포트가 갱신되지 않았습니다.')
