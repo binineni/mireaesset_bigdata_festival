@@ -148,7 +148,6 @@ df_pred = df_pred.sort_values(by='예측일', ascending=False)
 # df_done도 예측일을 기준으로 내림차순으로 정렬
 df_done = df_done.sort_values(by='예측일', ascending=False)
 
-
 # 진행 예정 청약 탭
 if choose == "진행 예정 청약":
 
