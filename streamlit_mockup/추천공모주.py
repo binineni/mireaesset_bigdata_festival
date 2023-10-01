@@ -43,9 +43,9 @@ with st.sidebar:
     } # css 설정
     )
 
-image = Image.open('img/미래에셋로고.png')
-image2 = Image.open('img/네이버클라우드.png')
-image3 = Image.open('img/미래에솦.png')
+image = Image.open('streamlit_mockup/img/미래에셋로고.png')
+image2 = Image.open('streamlit_mockup/img/네이버클라우드.png')
+image3 = Image.open('streamlit_mockup/img/미래에솦.png')
 
 st.sidebar.image(image, use_column_width=True)
 st.sidebar.image(image2, use_column_width=True)

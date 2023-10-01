@@ -23,6 +23,14 @@ current_directory = os.path.dirname(current_file)  # 현재 스크립트 파일�
 #private 페이지를 위한 코드
 st.set_page_config(page_title="FAQ")
 
+image = Image.open('streamlit_mockup/img/미래에셋로고.png')
+image2 = Image.open('streamlit_mockup/img/네이버클라우드.png')
+image3 = Image.open('streamlit_mockup/img/미래에솦.png')
+
+st.sidebar.image(image, use_column_width=True)
+st.sidebar.image(image2, use_column_width=True)
+st.sidebar.image(image3, use_column_width=True)
+
 #메뉴 탭 하단 사이드바에 이미지 넣기
 with st.sidebar:
     choose = option_menu("FAQ", ["FTA등급과 종합점수가 궁금해요","F, T, A에 사용한 데이터가 궁금해요", "청약권장도란?", ],
