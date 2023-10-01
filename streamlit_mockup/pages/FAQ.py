@@ -18,8 +18,8 @@ import os
 # 오프라인 모드로 변경하기
 #pyo.init_notebook_mode()
 
-# current_file = os.path.abspath(__file__)  # 현재 스크립트 파일의 절대 경로를 얻습니다.
-# current_directory = os.path.dirname(current_file)  # 현재 스크립트 파일이 위치한 디렉토리 경로를 얻습니다.
+current_file = os.path.abspath(__file__)  # 현재 스크립트 파일의 절대 경로를 얻습니다.
+current_directory = os.path.dirname(current_file)  # 현재 스크립트 파일이 위치한 디렉토리 경로를 얻습니다.
 #private 페이지를 위한 코드
 st.set_page_config(page_title="FAQ")
 
@@ -37,6 +37,8 @@ with st.sidebar:
     } # css 설정
     )
 
+##업로드 하고자 하는 데이터 버젼
+version = 2
 
 ##################################################################################################
 @st.cache_data
@@ -48,7 +50,7 @@ FTA_gain = load_FTA_gain_data()
 
 @st.cache_data
 def load_streamlit_data():
-    df = pd.read_csv('streamlit_mockup/data/data_streamlit_df.csv')
+    df = pd.read_csv(f'streamlit_mockup/data/data_streamlit_df_ver{version}.csv')
     df['시초/공모(%)'] = df['시초/공모(%)'].str.rstrip('%')
     df['시초/공모(%)'] = pd.to_numeric(df['시초/공모(%)'])
     df['예측일'] = pd.to_datetime(df['예측일']).dt.date
@@ -85,6 +87,15 @@ if choose == "FTA등급과 종합점수가 궁금해요":
     # 그래프 아래 내용
     st.header('어떤 공모주를 청약하면 좋을까?')
 
+    # stx.scrollableTextbox('보통, 공모주를 청약하기 전 기관경쟁률, 의무보유확약과 같은 정보들을 이곳 저곳에서 확인하며 공모주를 처약하게 되는데요.'
+    #                       '그래서 어떤 지표가 얼마나 높으면 좋은거야! 하는 고민들을 하신 경험, 한번쯤은 있지 않으셨나요?\n\n'
+    #                       '저희 미래에셋은 공모주의 상장당일 수익률과 관련이 있는 여러 변수들을 AI알고리즘을 이용해 분석한 뒤 수익과 관련된 점수를 제공해 드려요.\n\n'
+    #                       'F(finance)는 상장 대상 기업의 재무와 관련된 정보로, 기업의 성장성과 안전성, 수익성 등을 종합적으로 고려한 등급이에요.\n\n'
+    #                       'T(trend)는 공모주 시장의 동향, 해당 업종 및 섹터의 최근 수익성, 상장 당시 투자자들의 심리 등을 종합적으로 고려한 등급이에요.\n\n'
+    #                       'A(agent)는 수요예측결과를 바탕으로 기관경쟁률, 의무보유확약 등 공모주의 상태와 기관의 관심도 등을 종합적으로 고려한 등급이에요.\n\n'
+    #                       'F,T,A 등급을 종합적으로 고려하여 산정한 0~100 사이의 점수가 공모주 종합 평가 지표 점수에요.\n'
+    #                       '점수가 100에 가까워 질 수록 수익과 관련된 지표가 좋다는 의미로 해석됩니다.'
+    #                       , height=300, border=True)
 
     st.markdown(f'<span style="color: #000000;font-size: 18px;">보통, 공모주를 청약하기 전 기관경쟁률, 의무보유확약과 같은 정보들을 이곳 저곳에서 확인하며 공모주를 처약하게 되는데요, 그래서 어떤 지표가 얼마나 높으면 좋은거야! 하는 고민들을 하신 경험, 한번쯤은 있지 않으셨나요?'
                 ,unsafe_allow_html=True)
