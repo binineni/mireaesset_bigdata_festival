@@ -74,7 +74,7 @@ df = load_streamlit_data()
 
 @st.cache_data
 def load_company_analysis_data():
-    comp_analysis = pd.read_csv('streamlit_mockup/data/data_요약서비스.csv')
+    comp_analysis = pd.read_csv('streamlit_mockup/data/data_요약서비스_후처리.csv')
     comp_analysis['종목코드'] = comp_analysis['종목코드'].astype(str).str.zfill(6)
 
     return comp_analysis
