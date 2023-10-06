@@ -17,9 +17,9 @@ import matplotlib.pyplot as plt
 #public 페이지를 위한 코드
 st.set_page_config(page_title="개인맞춤 추천")
 
-image = Image.open('streamlit_mockup/img/미래에셋로고.png')
-image2 = Image.open('streamlit_mockup/img/네이버클라우드.png')
-image3 = Image.open('streamlit_mockup/img/미래에솦.png')
+image = Image.open('img/미래에셋로고.png')
+image2 = Image.open('img/네이버클라우드.png')
+image3 = Image.open('img/미래에솦.png')
 
 st.sidebar.image(image, use_column_width=True)
 st.sidebar.image(image2, use_column_width=True)
@@ -54,7 +54,7 @@ cs = load_cs_data()
 
 @st.cache_data
 def load_sector_data():
-    sector_data = pd.read_csv('streamlit_mockup/data/data_전처리_model_final.csv')
+    sector_data = pd.read_csv(f'streamlit_mockup/data/data_전처리_model_final_ver{version}.csv')
     sector_data['종목코드'] = sector_data['종목코드'].astype(str).str.zfill(6)
     sector_data = sector_data[['종목코드','종목명','지수명','종목구분']]
     return sector_data
@@ -93,7 +93,7 @@ def count_star(score, quantiles):
     return star
 
 #청약예정 데이터프레임
-today = datetime.date(2023, 9, 15)
+today = datetime.date(2023, 10, 10)
 #df_pred : 예측일 ~ 상장일 사이에 있는 추천할 기업
 df_pred = df[(df['예측일'] <= today) & (df['신규상장일'] >= today)]
 df_pred.reset_index(drop=True,inplace=True)

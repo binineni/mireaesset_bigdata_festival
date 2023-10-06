@@ -121,6 +121,8 @@ def process_agency(row):
     else:
         return None
 
+
+
 #제목
 st.title('추천공모주')
 #info
@@ -130,21 +132,23 @@ st.info('다크모드를 사용중이시라면, 다크모드를 해제해주세�
 st.divider()
 
 #진행 예정 청약 탭과 최근 상장기업 목록을 나누기
-# today = datetime.datetime.now().date()
-today = datetime.date(2023, 9, 15)
+today = datetime.datetime.now().date()
+#today = datetime.date(2023, 10, 6)
 
 #df_pred : 예측일 ~ 상장일 사이에 있는 추천할 기업
 df_pred = df[(df['예측일'] <= today) & (df['신규상장일'] >= today)]
 df_pred.reset_index(drop=True,inplace=True)
 
 #df : 예측 완료되었고 실제 결과가 나온 기업
-df_done = df[~df.index.isin(df_pred.index)]
+# df_done = df[~df.index.isin(df_pred.index)]
+df_done = df[(df['신규상장일']) <= today]
 df_done.reset_index(drop=True,inplace=True)
 
 # df_pred를 예측일을 기준으로 내림차순으로 정렬
 df_pred = df_pred.sort_values(by='예측일', ascending=False)
 # df_done도 예측일을 기준으로 내림차순으로 정렬
 df_done = df_done.sort_values(by='예측일', ascending=False)
+
 
 # 진행 예정 청약 탭
 if choose == "진행 예정 청약":
@@ -520,11 +524,15 @@ if choose == "진행 예정 청약":
                                 f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
                                 unsafe_allow_html=True)
                             # 내용
-                            for j in range(start, start + 5, 2):
-                                content = comp_analysis_row.iloc[0, j]
-                                if pd.notna(content):
-                                    st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
-                                                unsafe_allow_html=True)
+                            # for j in range(start, start + 5, 2):
+                            #     content = comp_analysis_row.iloc[0, j]
+                            #     if pd.notna(content):
+                            #         st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
+                            #                     unsafe_allow_html=True)
+                            content = comp_analysis_row.iloc[0, start]
+                            st.markdown(
+                                f'<span style="color: #000000;font-size: 18px;">{content}</span>',
+                                unsafe_allow_html=True)
 
                             st.divider()
                         start += 6
@@ -548,11 +556,15 @@ if choose == "진행 예정 청약":
                                 f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
                                 unsafe_allow_html=True)
                             # 내용
-                            for j in range(start, start + 5, 2):
-                                content = comp_analysis_row.iloc[0, j]
-                                if pd.notna(content):
-                                    st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
-                                                unsafe_allow_html=True)
+                            # for j in range(start, start + 5, 2):
+                            #     content = comp_analysis_row.iloc[0, j]
+                            #     if pd.notna(content):
+                            #         st.markdown(f'<span style="color: #000000;font-size: 18px;">- {content}</span>',
+                            #                     unsafe_allow_html=True)
+                            content = comp_analysis_row.iloc[0, start]
+                            st.markdown(
+                                f'<span style="color: #000000;font-size: 18px;">{content}</span>',
+                                unsafe_allow_html=True)
 
                             st.divider()
                         start += 6
@@ -595,6 +607,9 @@ if choose == "최근 상장한 기업 목록":
         f_star = count_star(df_done['f_score'][i], f_quantiles)
         t_star = count_star(df_done['t_score'][i], t_quantiles)
         a_star = count_star(df_done['a_score'][i], a_quantiles)
+
+        #주간사 내용 처리
+        df_done['주간사'] = df_done['주간사'].apply(process_agency)
 
         # 그리드 레이아웃 생성
         cols = st.columns((3, 3))
@@ -670,12 +685,15 @@ if choose == "최근 상장한 기업 목록":
                         st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
                                     unsafe_allow_html=True)
                         # 내용
-                        for j in range(start, start + 5, 2):
-                            content = comp_analysis_row.iloc[0, j]
-                            if pd.notna(content):
-                                st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
-                                            unsafe_allow_html=True)
-
+                        # for j in range(start, start + 5, 2):
+                        #     content = comp_analysis_row.iloc[0, j]
+                        #     if pd.notna(content):
+                        #         st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
+                        #                     unsafe_allow_html=True)
+                        content = comp_analysis_row.iloc[0, start]
+                        st.markdown(
+                            f'<span style="color: #000000;font-size: 18px;">{content}</span>',
+                            unsafe_allow_html=True)
                         st.divider()
                     start += 6
 
@@ -697,23 +715,18 @@ if choose == "최근 상장한 기업 목록":
                         st.markdown(f'<span style="color: #043B72; font-size: 20px;"><strong>{title}</strong></span>',
                                     unsafe_allow_html=True)
                         # 내용
-                        for j in range(start, start + 5, 2):
-                            content = comp_analysis_row.iloc[0, j]
-                            if pd.notna(content):
-                                st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
-                                            unsafe_allow_html=True)
-
+                        # for j in range(start, start + 5, 2):
+                        #     content = comp_analysis_row.iloc[0, j]
+                        #     if pd.notna(content):
+                        #         st.markdown(f'<span style="color: #043B72;font-size: 18px;">{content}</span>',
+                        #                     unsafe_allow_html=True)
+                        content = comp_analysis_row.iloc[0, start]
+                        st.markdown(
+                            f'<span style="color: #000000;font-size: 18px;">{content}</span>',
+                            unsafe_allow_html=True)
                         st.divider()
                     start += 6
 
             st.divider()
 
         st.divider()
-
-
-
-
-
-
-
-
