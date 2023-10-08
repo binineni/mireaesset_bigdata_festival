@@ -235,7 +235,7 @@ elif choose == "청약권장도란?":
     st.divider()
 
     #그래프 표시
-    selected_df = df.iloc[:400, :]
+    selected_df = df.iloc[:250, :]
 
     # Create a scatter plot with Plotly Express
     fig = px.scatter(
