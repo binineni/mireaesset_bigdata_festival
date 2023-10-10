@@ -141,7 +141,7 @@ df_pred.reset_index(drop=True,inplace=True)
 
 #df : 예측 완료되었고 실제 결과가 나온 기업
 # df_done = df[~df.index.isin(df_pred.index)]
-df_done = df[(df['신규상장일']) <= today]
+df_done = df[(df['신규상장일']) < today]
 df_done.reset_index(drop=True,inplace=True)
 
 # df_pred를 예측일을 기준으로 내림차순으로 정렬
