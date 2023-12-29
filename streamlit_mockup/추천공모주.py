@@ -133,7 +133,7 @@ st.divider()
 
 #진행 예정 청약 탭과 최근 상장기업 목록을 나누기
 #today = datetime.datetime.now().date()
-today = datetime.date(2023, 10, 6)
+today = datetime.date(2023, 10, 10)
 
 #df_pred : 예측일 ~ 상장일 사이에 있는 추천할 기업
 df_pred = df[(df['예측일'] <= today) & (df['신규상장일'] >= today)]
